@@ -1,4 +1,5 @@
 #include <stm32f4xx.h>
+#include <6581.h>
 
 
 #define MAX_STRLEN 12 // this is the maximum string length of our string in characters
@@ -131,6 +132,9 @@ void USART1_IRQHandler(void){
 	}
 }
 
+void initSid() {
+
+}
 
 
 int main(void) {
@@ -141,9 +145,29 @@ int main(void) {
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 	TIM_OCInitTypeDef  TIM_OCInitStructure;
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 
-	/* GPIOB Configuration: TIM3 CH4 (PB1) */
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE); // address line
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE); // clock and chip select line
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE); // data line
+
+	// GPIOA Configuration: Address line
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	// GPIOD Configuration: Data line
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 |
+								  GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(GPIOD, &GPIO_InitStructure);
+
+	// GPIOB Configuration: TIM3 CH4 (PB1) - clock
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
@@ -151,6 +175,13 @@ int main(void) {
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	GPIO_PinAFConfig(GPIOB, GPIO_PinSource1, GPIO_AF_TIM3);
+
+	// GPIOB Configuration: chip enable
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+
 
 	/* Time base configuration */
 	unsigned int frequency = 600000;
@@ -173,6 +204,10 @@ int main(void) {
 	/* TIM3 enable counter */
 	TIM_Cmd(TIM3, ENABLE);
 	TIM3->CCR4 = TIM_TimeBaseStructure.TIM_Period / 2;
+
+	SID_writeRegister(REG_VOICE_1_FREQ_LOW, 50);
+	SID_writeRegister(REG_VOICE_1_FREQ_HI, 0);
+	SID_writeRegister(REG_VOICE_1_CONTROL, 64); // square wave
 
     while (1) {
     }
